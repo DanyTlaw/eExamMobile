@@ -9,7 +9,7 @@
     for Android we use cordova.file.dataDirectory
 
     If you wanna make this applikation for iOS change this file directory with this:
-    for iOS we use cordova.file.
+    for iOS we use cordova.file.applicationDirectory
 */
 
 app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
