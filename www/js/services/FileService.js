@@ -4,9 +4,16 @@
 
     $cordovaFile handles the Filesystem calls
     $cordovaFileTransfer handles the upload call
+
+    It is imporant to note that the Android Fileystem and the iOS Filesystem are not alike
+    for Android we use cordova.file.dataDirectory
+
+    If you wanna make this applikation for iOS change this file directory with this:
+    for iOS we use cordova.file.
 */
 
 app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
+
     // Encryption Password (webapplikation has the same for decryption)
     var encPassword = "";
     // Variables for writing
@@ -21,7 +28,7 @@ app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
     var trustHosts = true;
     var options = {};
     // Saves the basic url of the api
-    var apiURL = "http://10.0.3.2:3000/api/";
+    var apiURL = "http://eexam.herokuapp.com/api/";
 
     // This Function Handling the File upload
     this.upload = function(course_of_study, course, email){
@@ -34,8 +41,6 @@ app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
             params: {"course_of_study": course_of_study,"course": course ,"email": email}
         };
         var targetPath = cordova.file.dataDirectory + filename;
-        alert(targetPath);
-
         //Before uploading we want to say that we upload
         var text = GibberishAES.enc("Send File", encPassword) + "|";
         writeFile(filename, text);
@@ -118,7 +123,7 @@ app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
             // success in kilobytes
             alert(success);
           }, function (error) {
-            alert(error);
+          
           });
     }
     /*
@@ -145,30 +150,27 @@ app.service('FileService', function($cordovaFile, $cordovaFileTransfer, $http){
 
     }
 
-    // Function to write the online status
-    this.writeOnline = function(){
-        // Get the converted Time
-        var time = calcTime();
-        var enctime = GibberishAES.enc(time, encPassword);
-        // Create the correct string to save in File the | is needed for encryption logic on the server
-        var text = enctime + "|" + GibberishAES.enc("Online", encPassword) + "|";
-        alert(filename);
-        writeFile(filename, text);
-
-    }
-
     // Function to write the offline status
-    this.writeOffline = function(){
+    this.writeInet = function(textEvent){
         // Get the converted Time
         var time = calcTime();
         var enctime = GibberishAES.enc(time, encPassword);
         // Create the correct string to save in File the | is needed for encryption logic on the server
-        var text = enctime + "|" + GibberishAES.enc("Offline", encPassword)+ "|";
-        alert(filename);
+        var text = enctime + "|" + GibberishAES.enc(textEvent, encPassword)+ "|";
         writeFile(filename, text);
     }
 
     
+    // Function to write the bluetooth status for on and off
+    this.writeBluetooth = function(textEvent){
+        // Get the converted Time
+        var time = calcTime();
+        var enctime = GibberishAES.enc(time, encPassword);
+         // Create the correct string to save in File the | is needed for encryption logic on the server
+        var text = enctime + "|" + GibberishAES.enc(textEvent, encPassword) + "|";
+        writeFile(filename, text);
+    }
+
     // this function gets the key for encryption
     function getKey(){
       $http.get(apiURL + "enc")

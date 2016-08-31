@@ -11,23 +11,26 @@ app.controller("MainController", function($scope, $rootScope, $cordovaNetwork, F
   document.addEventListener('deviceready', function(){
     var info_write = false;
     //init variables
-    $scope.courseOfStudy = "";
-    $scope.course = "";
-    $scope.email= "";
+    $rootScope.courseOfStudy = "";
+    $rootScope.course = "";
+    $rootScope.email= "";
 
+    // Disable variables
     $scope.disableReady = true;
     $scope.disableUpload = true;
 
+    $scope.editCourseOfStudy = false;
+    $scope.editCourse = false;
+    $scope.editEmail = false;
+
     $scope.saveData = function(data){
-      $scope.courseOfStudy = data.courseOfStudy;
-      $scope.course = data.course;
-      $scope.email = data.email;
+      $rootScope.courseOfStudy = data.courseOfStudy;
+      $rootScope.course = data.course;
+      $rootScope.email = data.email;
 
       // After the information is saved we can enable the button ready send
       $scope.disableReady = false;
     }
-
-
 
     $scope.checkEnc = function(){
       // using encyrption with this https://github.com/mdp/gibberish-aes
@@ -81,16 +84,16 @@ app.controller("MainController", function($scope, $rootScope, $cordovaNetwork, F
       // name / modul / course of study
       // daniel.herzogSWE2WI.txt
       // First we have to split the email from daniel.herzog@students.fhnw.ch to -> daniel.herzog 
-      var splitEmail = $scope.email.split("@");
+      var splitEmail = $rootScope.email.split("@");
       // Puts the logfile name together
-      var logfileName = splitEmail[0] + $scope.course + $scope.courseOfStudy + ".txt";
+      var logfileName = splitEmail[0] + $rootScope.course + $rootScope.courseOfStudy + ".txt";
       // Creates a file with the name 
       FileService.createLogFile(logfileName);
       
       // Timer for getting the Key first
       setTimeout(function () {
-            FileService.writeInformations($scope.courseOfStudy, $scope.course, $scope.email);
-            // Enable the Upload button
+            FileService.writeInformations($rootScope.courseOfStudy, $rootScope.course, $rootScope.email);
+            // Enable the Upload button 
             $scope.disableUpload = false;
       }, 6000);    
      
@@ -99,62 +102,75 @@ app.controller("MainController", function($scope, $rootScope, $cordovaNetwork, F
       }
     
     function upload(){
-      FileService.upload($scope.courseOfStudy,$scope.course,$scope.email);
+      FileService.upload($rootScope.courseOfStudy, $rootScope.course, $rootScope.email);
     }
-
 
     /* 
       Checks Online and Offline Events
     */
 
-        // Checks for Online event
+    // Checks for Online event
     $rootScope.$on('$cordovaNetwork:online', function(event, networkState){
         var onlineState = networkState;
-        // Writes Online in the file
-        FileService.writeOnline();
         // Send a Post call that the user is Online
         postOnline();
-
+        // Writes Online in the file
+        FileService.writeInet("Online");  
     })
 
     // Checks for Offline event
     $rootScope.$on('$cordovaNetwork:offline', function(event, networkState){
         var offlineState = networkState;
-        
-        FileService.writeOffline();
-
+        // Writes Offline in the file
+        FileService.writeInet("Offline");
     })
+    /*
+      Bluetooth events
+    */
+  window.addEventListener('BluetoothStatus.enabled', function() {
+      // write that the applikations bluetooth is enabled
+      //alert('Bluetooth has been enabled');
+      FileService.writeBluetooth("Bluetooth On");
 
+  });
 
+  window.addEventListener('BluetoothStatus.disabled', function() {
+    // write that the applikations bluetooth is disabled
+    //alert('Bluetooth has been disabled');
+    FileService.writeBluetooth("Bluetooth Off");
+  });
     /*
       Post calls
      */
-
-    var apiURL = "http://10.0.3.2:3000/api/"
-
+    // This urlt represents the API URL
+    
+    var apiURL = "http://eexam.herokuapp.com/api/";
     function postOnline(){
-      $http.post(apiURL + "isOnline", [{"course_of_study": $scope.course_of_study,"course": $scope.course ,"email": $scope.email}])
+      $http.post(apiURL + "isOnline", [{"course_of_study": $rootScope.course_of_study,"course": $rootScope.course ,"email": $rootScope.email}])
       .success(function(data){
-        alert("sucess");
+       
       })
       .error(function(data){
-        alert("failure");
+       
       });
     }
+    
     // Function for sending the ready signal to the server
     function postReady(){
       // Sends a JSON file with the informations
-      $http.post(apiURL + "setReady", [{"course_of_study": $scope.course_of_study,"course": $scope.course ,"email": $scope.email}])
+      $http.post(apiURL + "setReady", [{"course_of_study": $rootScope.course_of_study,"course": $rootScope.course ,"email": $rootScope.email}])
       .success(function(data){
         alert("Ready set");
-        alert(data);
+        // If this is a success the student shouldnt be able to change the data
+        $scope.editCourseOfStudy = true;
+        $scope.editCourse = true;
+        $scope.editEmail = true;
+
+        $scope.disableReady = true;
       })
       .error(function(data){
         alert("Ready not set");
       });
     }
-
-
-
   });
 });
